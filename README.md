@@ -1,5 +1,7 @@
 # PostgreSQL shopping cart
 
+All functionality is in PostgreSQL's PL/pgSQL functions.
+
 | SELECT * FROM … | result |
 |-----------------|--------|
 | **items\_get()** | show all items |
@@ -18,4 +20,24 @@
 | **invoices\_get\_for(person\_id)** | this person's orders |
 | **items\_get\_for(person\_id)** | items this person has paid for |
 
+Every API function returns two things:
 
+1. HTTP status code
+2. JSON result
+
+## Install
+
+```
+createuser -s dude
+createdb -U dude -E UTF8 dude\_test
+gem install pg
+gem install json
+cd store
+ruby test-db.rb
+ruby test-api.rb
+```
+
+## Play
+
+```
+psql -U dude dude_test
