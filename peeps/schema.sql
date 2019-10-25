@@ -18,8 +18,6 @@ CREATE TABLE peeps.people (
 	id serial primary key,
 	email text UNIQUE CHECK (email ~ '\A\S+@\S+\.\S+\Z'),
 	name text NOT NULL CHECK (LENGTH(name) > 0),
-	lopass char(4),
-	company text,
 	city text,
 	state text,
 	country char(2) REFERENCES peeps.countries(code)
