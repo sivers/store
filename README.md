@@ -24,7 +24,7 @@ All functionality is in PostgreSQL's PL/pgSQL functions.
 
 ```
 createuser -s dude
-createdb -U dude -E UTF8 dude\_test
+createdb -U dude -E UTF8 dude_test
 gem install pg
 gem install json
 cd store
