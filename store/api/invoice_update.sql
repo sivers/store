@@ -5,8 +5,8 @@ declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
 	update store.invoices
-		set country = $2
-		where id = $1;
+	set country = $2
+	where id = $1;
 	status := 200;
 	js := row_to_json(r) from (
 		select * from store.invoice_view where id = $1
@@ -29,8 +29,8 @@ declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
 	update store.invoices
-		set country = $2, address = $3
-		where id = $1;
+	set country = $2, address = $3
+	where id = $1;
 	status := 200;
 	js := row_to_json(r) from (
 		select * from store.invoice_view where id = $1

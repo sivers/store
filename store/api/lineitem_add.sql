@@ -11,17 +11,17 @@ begin
 		select id into cart_id from store.cart_new_id($1);
 	end if;
 	select id into line_id
-		from store.lineitems
-		where invoice_id = cart_id
-		and item_id = $2;
+	from store.lineitems
+	where invoice_id = cart_id
+	and item_id = $2;
 	if line_id is null then
 		insert into store.lineitems (invoice_id, item_id, quantity)
-			values (cart_id, $2, $3)
-			returning id into line_id;
+		values (cart_id, $2, $3)
+		returning id into line_id;
 	else
 		update store.lineitems
-			set quantity = quantity + $3
-			where id = line_id;
+		set quantity = quantity + $3
+		where id = line_id;
 	end if;
 	status := 200;
 	js := row_to_json(r.*) from store.lineitems r where id = line_id;

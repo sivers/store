@@ -10,8 +10,8 @@ begin
 		js := '{}';
 	elsif $2 > 0 then
 		update store.lineitems
-			set quantity = $2
-			where id = $1;
+		set quantity = $2
+		where id = $1;
 		status := 200;
 		js := row_to_json(r.*) from store.lineitems r where id = $1;
 	else

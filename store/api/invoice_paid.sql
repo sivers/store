@@ -5,11 +5,11 @@ declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
 	update store.invoices
-		set payment_date = now(), payment_info = $2
-		where id = $1
-		and payment_date is null;
+	set payment_date = now(), payment_info = $2
+	where id = $1
+	and payment_date is null;
 	select x.status, x.js into status, js
-		from store.invoice_get($1) x;
+	from store.invoice_get($1) x;
 exception
 	when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
 	js := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);

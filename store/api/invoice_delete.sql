@@ -17,4 +17,3 @@ exception
 	status := 500;
 end;
 $$ language plpgsql;
-

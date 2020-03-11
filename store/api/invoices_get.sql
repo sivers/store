@@ -3,7 +3,7 @@ create or replace function store.invoices_get(
 begin
 	js := json_agg(r) from (
 		select * from store.invoice_view
-			order by id
+		order by id
 	) r;
 	status := 200;
 	if js is null then

@@ -14,17 +14,17 @@ begin
 	end if;
 	-- is specific country in shipchart?
 	select cost into c from store.shipchart
-		where country = $1
-		and weight >= $2
-		order by cost asc limit 1;
+	where country = $1
+	and weight >= $2
+	order by cost asc limit 1;
 	if c is not null then
 		return c;
 	end if;
 	-- if country didn't match, null means "rest of world"
 	select cost into c from store.shipchart
-		where country is null
-		and weight >= $2
-		order by cost asc limit 1;
+	where country is null
+	and weight >= $2
+	order by cost asc limit 1;
 	if c is not null then
 		return c;
 	end if;
