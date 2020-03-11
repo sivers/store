@@ -277,5 +277,3 @@ INSERT INTO people (id, email, name, city, state, country) VALUES (8, 'yoko@ono.
 
 ALTER TABLE people ENABLE TRIGGER ALL;
 SELECT pg_catalog.setval('people_id_seq', 8, true);
-
-
