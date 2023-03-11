@@ -25,7 +25,7 @@ end
 
 module JDB
   def qry(sql, params=[])
-    @res = DB.exec_params("SELECT * FROM #{sql}", params)
+    @res = DB.exec_params("select * from #{sql}", params)
     @j = JSON.parse(@res[0]['js'], symbolize_names: true) if(@res[0]['js'])
   end
 end
