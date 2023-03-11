@@ -4,7 +4,7 @@
 File.open('schema.sql', 'w') {|f| f.puts 'BEGIN;'}
 
 def save(txt)
-	File.open('schema.sql', 'a') {|f| f.puts txt; f.puts "\n\n"}
+  File.open('schema.sql', 'a') {|f| f.puts txt; f.puts "\n\n"}
 end
 
 save File.read('tables.sql')

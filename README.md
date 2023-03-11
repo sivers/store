@@ -24,7 +24,7 @@ All functionality is in PostgreSQL’s PL/pgSQL functions.
 
 ```
 createuser -s dude
-createdb -U dude -E UTF8 dude_test
+createdb -U dude dude
 gem install pg
 gem install json
 cd store
@@ -36,7 +36,7 @@ ruby test-api.rb
 
 ```
 ruby getdb-example.rb
-psql -U dude dude_test
+psql -U dude dude
 pg» set search_path = store,peeps;
 pg» select * from invoices_get();
 pg» select * from invoice_shipped(4, 'posted');
