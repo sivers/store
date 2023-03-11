@@ -9,10 +9,8 @@ SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 
-SET search_path = peeps, pg_catalog;
-
 --
--- Data for Name: countries; Type: TABLE DATA; Schema: peeps; Owner: dude
+-- Data for Name: countries; Type: TABLE DATA; Owner: dude
 --
 
 INSERT INTO countries (code, name) VALUES ('AD', 'Andorra');
@@ -260,7 +258,7 @@ INSERT INTO countries (code, name) VALUES ('ZW', 'Zimbabwe');
 
 
 --
--- Data for Name: people; Type: TABLE DATA; Schema: peeps; Owner: dude
+-- Data for Name: people; Type: TABLE DATA; Owner: dude
 --
 
 ALTER TABLE people DISABLE TRIGGER ALL;

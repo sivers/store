@@ -5,47 +5,47 @@ drop schema if exists store cascade;
 create schema store;
 set search_path = store;
 
-create table store.items (
+create table items (
 	id serial primary key,
 	name text not null unique,
 	price numeric,
 	weight numeric
 );
 
-create table store.invoices (
+create table invoices (
 	id serial primary key,
-	person_id integer not null references peeps.people(id),
+	person_id integer not null references people(id),
 	order_date date not null default current_date,
 	payment_date date,
 	payment_info text,
 	subtotal numeric,
 	shipping numeric,
 	total numeric,
-	country char(2) references peeps.countries(code),
+	country char(2) references countries(code),
 	address text,
 	ship_date date,
 	ship_info text
 );
-create index on store.invoices(person_id);
-create index unshipped on store.invoices(payment_date, ship_date, address);
+create index on invoices(person_id);
+create index unshipped on invoices(payment_date, ship_date, address);
 
-create table store.lineitems (
+create table lineitems (
 	id serial primary key,
-	invoice_id integer not null references store.invoices(id) on delete cascade,
-	item_id integer not null references store.items(id) on delete restrict,
+	invoice_id integer not null references invoices(id) on delete cascade,
+	item_id integer not null references items(id) on delete restrict,
 	quantity smallint not null default 1 check (quantity > 0),
 	price numeric,
 	unique(invoice_id, item_id)
 );
-create index on store.lineitems(invoice_id);
+create index on lineitems(invoice_id);
 
-create table store.shipchart (
+create table shipchart (
 	id serial primary key,
-	country char(2) references peeps.countries(code),
+	country char(2) references countries(code),
 	weight numeric not null, -- up to this (invoice.weight <= shipchart.weight)
 	cost numeric not null
 );
-create index on store.shipchart(country, weight);
+create index on shipchart(country, weight);
 
 
 
@@ -72,15 +72,15 @@ create view store.invoice_view as
 		) ll
 	)
 	from store.invoices v
-	join peeps.people p on v.person_id = p.id;
+	join people p on v.person_id = p.id;
 
 
 -- invoice_id : does it need a shipment? (regardless of whether it has one or not)
 create or replace function store.invoice_needs_shipment(integer) returns boolean as $$
 begin
 	perform i.id
-	from store.items i
-	join store.lineitems l on i.id = l.item_id
+	from items i
+	join lineitems l on i.id = l.item_id
 	where l.invoice_id = $1
 	and i.weight is not null;
 	if found then
@@ -95,10 +95,10 @@ $$ language plpgsql;
 -- input: invoice_id output: numeric cost of shipping current lineitems
 create or replace function store.invoice_shipcost(integer, out cost numeric) as $$
 begin
-	select store.shipcost(v.country, sum(coalesce(i.weight, 0) * l.quantity)) into cost
-	from store.invoices v
-	join store.lineitems l on v.id = l.invoice_id
-	join store.items i on l.item_id = i.id
+	select shipcost(v.country, sum(coalesce(i.weight, 0) * l.quantity)) into cost
+	from invoices v
+	join lineitems l on v.id = l.invoice_id
+	join items i on l.item_id = i.id
 	where v.id = $1
 	group by v.country;
 end;
@@ -120,7 +120,7 @@ begin
 		return 1000;
 	end if;
 	-- is specific country in shipchart?
-	select cost into c from store.shipchart
+	select cost into c from shipchart
 	where country = $1
 	and weight >= $2
 	order by cost asc limit 1;
@@ -128,7 +128,7 @@ begin
 		return c;
 	end if;
 	-- if country didn't match, null means "rest of world"
-	select cost into c from store.shipchart
+	select cost into c from shipchart
 	where country is null
 	and weight >= $2
 	order by cost asc limit 1;
@@ -146,7 +146,7 @@ $$ language plpgsql;
 create or replace function store.cart_get_id(integer, out id integer) as $$
 begin
 	select v.id into id
-	from store.invoices v
+	from invoices v
 	where person_id = $1
 	and payment_date is null;
 end;
@@ -157,11 +157,11 @@ $$ language plpgsql;
 -- output: new invoices.id
 create or replace function store.cart_new_id(integer, out id integer) as $$
 begin
-	insert into store.invoices (person_id, country)
+	insert into invoices (person_id, country)
 	select p.id, p.country
-	from peeps.people p
+	from people p
 	where p.id = $1
-	returning store.invoices.id into id;
+	returning invoices.id into id;
 end;
 $$ language plpgsql;
 
@@ -173,9 +173,9 @@ declare
 begin
 	-- if not deleting, update lineitem price
 	if (tg_op != 'DELETE') then
-		update store.lineitems l
+		update lineitems l
 		set price = l.quantity * i.price
-		from store.items i
+		from items i
 		where l.item_id = i.id
 		and l.id = new.id;
 	end if;
@@ -187,9 +187,9 @@ begin
 	end if;
 	-- whether insert|update|delete, these should work:
 	select sum(price) into lsum
-	from store.lineitems
+	from lineitems
 	where invoice_id = invid;
-	update store.invoices
+	update invoices
 	set subtotal = lsum,
 	shipping = store.invoice_shipcost(invid),
 	total = (lsum + store.invoice_shipcost(invid))
@@ -197,8 +197,8 @@ begin
 	return new;
 end;
 $$ language plpgsql;
-drop trigger if exists lineitem_calc on store.lineitems cascade;
-create trigger lineitem_calc after insert or delete or update of item_id, quantity on store.lineitems
+drop trigger if exists lineitem_calc on lineitems cascade;
+create trigger lineitem_calc after insert or delete or update of item_id, quantity on lineitems
 for each row execute procedure store.lineitem_calc();
 
 
@@ -207,7 +207,7 @@ declare
 	paid_invoice integer;
 begin
 	select v.id into paid_invoice
-	from store.invoices v
+	from invoices v
 	where v.id = old.invoice_id
 	and v.payment_date is not null;
 	if found then
@@ -220,8 +220,8 @@ begin
 	end if;
 end;
 $$ language plpgsql;
-drop trigger if exists no_alter_paid_lineitem on store.lineitems cascade;
-create trigger no_alter_paid_lineitem before delete or update on store.lineitems
+drop trigger if exists no_alter_paid_lineitem on lineitems cascade;
+create trigger no_alter_paid_lineitem before delete or update on lineitems
 for each row execute procedure store.no_alter_paid_lineitem();
 
 
@@ -237,8 +237,8 @@ begin
 	end if;
 end;
 $$ language plpgsql;
-drop trigger if exists no_alter_shipped_invoice on store.invoices cascade;
-create trigger no_alter_shipped_invoice before delete or update on store.invoices
+drop trigger if exists no_alter_shipped_invoice on invoices cascade;
+create trigger no_alter_shipped_invoice before delete or update on invoices
 for each row execute procedure store.no_alter_shipped_invoice();
 
 
@@ -248,7 +248,7 @@ create or replace function store.invoice_update(integer, char(2),
 declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
-	update store.invoices
+	update invoices
 	set country = $2
 	where id = $1;
 	status := 200;
@@ -272,7 +272,7 @@ create or replace function store.invoice_update(integer, char(2), text,
 declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
-	update store.invoices
+	update invoices
 	set country = $2, address = $3
 	where id = $1;
 	status := 200;
@@ -304,20 +304,20 @@ begin
 		select id into cart_id from store.cart_new_id($1);
 	end if;
 	select id into line_id
-	from store.lineitems
+	from lineitems
 	where invoice_id = cart_id
 	and item_id = $2;
 	if line_id is null then
-		insert into store.lineitems (invoice_id, item_id, quantity)
+		insert into lineitems (invoice_id, item_id, quantity)
 		values (cart_id, $2, $3)
 		returning id into line_id;
 	else
-		update store.lineitems
+		update lineitems
 		set quantity = quantity + $3
 		where id = line_id;
 	end if;
 	status := 200;
-	js := row_to_json(r.*) from store.lineitems r where id = line_id;
+	js := row_to_json(r.*) from lineitems r where id = line_id;
 exception
 	when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
 	js := json_build_object('code',e6,'message',e7,'detail',e8,'context',e9);
@@ -346,9 +346,9 @@ create or replace function store.items_get_for(integer,
 	out status smallint, out js json) as $$
 begin
 	js := json_agg(r) from (
-		select i.id, i.name from store.items i
-		join store.lineitems l on i.id = l.item_id
-		join store.invoices v on l.invoice_id = v.id
+		select i.id, i.name from items i
+		join lineitems l on i.id = l.item_id
+		join invoices v on l.invoice_id = v.id
 		where v.person_id = $1
 		and v.payment_date is not null
 		order by name
@@ -365,7 +365,7 @@ create or replace function store.items_get(
 	out status smallint, out js json) as $$
 begin
 	js := json_agg(r) from (
-		select * from store.items order by name
+		select * from items order by name
 	) r;
 	status := 200;
 	if js is null then
@@ -381,7 +381,7 @@ create or replace function store.invoice_shipped(integer, text,
 declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
-	update store.invoices
+	update invoices
 	set ship_date = now(), ship_info = $2
 	where id = $1
 	and ship_date is null;
@@ -406,7 +406,7 @@ begin
 		status := 404;
 		js := '{}';
 	else
-		delete from store.invoices where id = $1;
+		delete from invoices where id = $1;
 	end if;
 exception
 	when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
@@ -477,18 +477,18 @@ create or replace function store.lineitem_update(integer, integer,
 declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
-	perform 1 from store.lineitems where id = $1;
+	perform 1 from lineitems where id = $1;
 	if not found then
 		status := 404;
 		js := '{}';
 	elsif $2 > 0 then
-		update store.lineitems
+		update lineitems
 		set quantity = $2
 		where id = $1;
 		status := 200;
-		js := row_to_json(r.*) from store.lineitems r where id = $1;
+		js := row_to_json(r.*) from lineitems r where id = $1;
 	else
-		delete from store.lineitems where id = $1;
+		delete from lineitems where id = $1;
 		status := 200;
 		js := '{}';
 	end if;
@@ -521,7 +521,7 @@ create or replace function store.addresses_get(integer,
 begin
 	js := json_agg(r) from (
 		select id, country, address
-		from store.invoices
+		from invoices
 		where person_id = $1
 		and address is not null
 		order by id
@@ -539,13 +539,13 @@ create or replace function store.lineitem_delete(integer,
 declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
-	js := row_to_json(r.*) from store.lineitems r where id = $1;
+	js := row_to_json(r.*) from lineitems r where id = $1;
 	status := 200;
 	if js is null then
 		status := 404;
 		js := '{}';
 	else
-		delete from store.lineitems where id = $1;
+		delete from lineitems where id = $1;
 	end if;
 exception
 	when others then get stacked diagnostics e6=returned_sqlstate, e7=message_text, e8=pg_exception_detail, e9=pg_exception_context;
@@ -562,7 +562,7 @@ create or replace function store.invoice_paid(integer, text,
 declare
 	e6 text; e7 text; e8 text; e9 text;
 begin
-	update store.invoices
+	update invoices
 	set payment_date = now(), payment_info = $2
 	where id = $1
 	and payment_date is null;
