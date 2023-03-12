@@ -23,11 +23,10 @@ All functionality is in PostgreSQL’s PL/pgSQL functions.
 ## Install
 
 ```
-createuser -s dude
-createdb -U dude dude
 gem install pg
 gem install json
-cd store
+sh init.sh
+sh reset.sh
 ruby test-db.rb
 ruby test-api.rb
 ```
