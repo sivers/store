@@ -42,20 +42,40 @@ ruby test-api.rb
 ```
 $ irb
 irb» require './getdb.rb'
+=> true
 irb» db = getdb('store')
 irb» ok, res = db.call('invoice_get', 4)
-irb» puts res
+irb» res
+{:id=>4,
+  :person_id=>7,
+  :name=>"巩俐",
+  :order_date=>"2019-10-02",
+  :payment_date=>nil,
+  :payment_info=>nil,
+  :subtotal=>2,
+  :shipping=>0,
+  :total=>2,
+  :country=>"CN",
+  :address=>nil,
+  :ship_date=>nil,
+  :ship_info=>nil,
+  :lineitems=>[{:id=>4, :item_id=>4, :name=>"JPG of Mr. Wonka", :quantity=>1, :price=>2}]}
 irb» ok, res = db.call('invoice_paid', 4, 'cash')
 irb» puts ok ? 'paid' : res[:error]
+paid
 irb» ok, res = db.call('invoices_get')
-irb» res.each do |inv|
-irb»   puts "%d\t%s" % [inv[:id], inv[:name]]
-irb» end
+irb» res.map {|i| "%d = %s" % [i[:id], i[:name]]}
+=> ["1 = Charlie Buckets", "2 = Veruca Salt", "3 = Augustus Gloop", "4 = 巩俐"]
 irb» exit
 
 $ psql -U dude dude
 pg» select * from store.invoices_get();
+ok │ t
+js │ [{"id":1,"person_id":4,"name":"Charlie Buckets","order_date":"2019-10-02","payment_date":"2019-10-02","payment_info":"PayPal #abc123","subtotal":15,"shipping":6,"total":21,"country":"US","address":"Charlie Buckets\n3 Skid Row\nHershey, PA 04141","ship_date":"2019-10-03","ship_info":"usps# a1b2","lineitems":[{"id":1,"item_id":3,"name":"Fizzy Lifting Drink","quantity":3,"price":15}]},
+…
 pg» select * from store.invoice_shipped(4, 'posted');
+ok │ t
+js │ {"id":4,"person_id":7,"order_date":"2019-10-02","payment_date":"2023-03-12","payment_info":"cash","subtotal":2,"shipping":0,"total":2,"country":"CN","address":null,"ship_date":"2023-03-12","ship_info":"posted"}
 ```
 
 ## Contents
