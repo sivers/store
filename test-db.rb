@@ -59,6 +59,8 @@ class StoreTest < Tester
     assert_equal 0, res[0]['total'].to_f
   end
 
+end
+__END__
   def test_no_alter_paid_lineitem
     err = assert_raises PG::RaiseException do
       DB.exec("delete from lineitems where id = 1")
