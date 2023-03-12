@@ -45,7 +45,7 @@ class StoreTest < Tester
     res = DB.exec("select shipping, total from invoices where id = 4")
     assert_equal 9, res[0]['shipping'].to_f
     assert_equal 165.99, res[0]['total'].to_f
-    DB.exec("update lineitems set quantity = 100 where id = 6")
+    DB.exec("update lineitems set quantity = 100 where invoice_id = 4 and item_id = 3")
     res = DB.exec("select shipping, total from invoices where id = 4")
     assert_equal 14, res[0]['shipping'].to_f
     assert_equal 665.99, res[0]['total'].to_f
@@ -59,24 +59,35 @@ class StoreTest < Tester
     assert_equal 0, res[0]['total'].to_f
   end
 
-end
-__END__
-  def test_no_alter_paid_lineitem
+  def test_no_alter_paid_lineitem1
     err = assert_raises PG::RaiseException do
       DB.exec("delete from lineitems where id = 1")
     end
+    assert err.message.include? 'no_alter_paid_lineitem'
+  end
+
+  def test_no_alter_paid_lineitem2
     err = assert_raises PG::RaiseException do
       DB.exec("update lineitems set quantity = 9 where id = 1")
     end
+    assert err.message.include? 'no_alter_paid_lineitem'
   end
 
-  def test_no_alter_shipped_invoice
+  def test_no_alter_shipped_invoice1
     err = assert_raises PG::RaiseException do
       DB.exec("delete from invoices where id = 1")
     end
+    assert err.message.include? 'no_alter_shipped_invoice'
+  end
+
+  def test_no_alter_shipped_invoice2
     err = assert_raises PG::RaiseException do
       DB.exec("update invoices set total = 1 where id = 1")
     end
+    assert err.message.include? 'no_alter_shipped_invoice'
+  end
+
+  def test_ok_alter_unshipped_invoice
     res = DB.exec("update invoices set ship_date=now(), ship_info='FedEx' where id=2 returning *")
     assert_equal Time.now.to_s[0,10], res[0]['ship_date']
     assert_equal 'FedEx', res[0]['ship_info']
@@ -131,9 +142,9 @@ __END__
     res = DB.exec("select * from store.shipcost('SG', 400)")
     assert_equal '14', res[0]['shipcost']
     res = DB.exec("select * from store.shipcost('XX', 1000)")
-    assert_equal '1000', res[0]['shipcost']
+    assert_equal '20', res[0]['shipcost']
     res = DB.exec("select * from store.shipcost('XX', -1)")
-    assert_equal '1000', res[0]['shipcost']
+    assert_equal '20', res[0]['shipcost']
   end
 
   def test_invoice_shipcost
@@ -158,9 +169,9 @@ __END__
 
   def test_cart_new
     res = DB.exec("select * from store.cart_new_id(1)")
-    assert_equal '5', res[0]['id']
-    res = DB.exec("select * from store.invoices where id = 5")
-    assert_equal '5', res[0]['id']
+    newid = res[0]['id'].to_i
+    assert newid > 4
+    res = DB.exec("select * from invoices where id = #{newid}")
     assert_equal '1', res[0]['person_id']
     assert_equal 'SG', res[0]['country']
   end
