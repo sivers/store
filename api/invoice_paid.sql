@@ -4,12 +4,14 @@ create function store.invoice_paid(integer, text,
 declare
 	err text;
 begin
-	update invoices
-	set payment_date = now(), payment_info = $2
-	where id = $1
-	and payment_date is null;
 	ok = true;
-	js = '{}';
+	with nu as (
+		update invoices
+		set payment_date = now(), payment_info = $2
+		where id = $1
+		and payment_date is null
+		returning *
+	) select row_to_json(nu.*) into js from nu;
 exception
 	when others then get stacked diagnostics err = message_text;
 	js = json_build_object('error', err);

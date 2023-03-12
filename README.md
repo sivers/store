@@ -60,13 +60,16 @@ pg» select * from store.invoice_shipped(4, 'posted');
 
 ## Contents
 
-* **tables.sql** = tables and indexes
 * **api/** = public API functions (only use these)
 * **functions/** = private functions used by API
+* **getdb.rb** = helper to call API
+* **tables.sql** = tables and indexes
+* **test-api.rb** = unit tests of API calls
+* **test-db.rb** = unit tests of private functions
+* **test\_data.sql** = sample data for testing
+* **tester.rb** = helper for unit tests
 * **triggers/** = triggers for data logic
 * **views/** = re-usable views for JSON
-* **test-api.rb** = unit tests of API calls
-* **test\_data.sql** = sample data I use for testing
 
 
 ## Schema for functions
